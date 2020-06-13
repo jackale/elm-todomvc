@@ -39,9 +39,7 @@ init _ =
     (Model "" [], Cmd.none)
 
 type Msg
-    = Msg1
-    | Msg2
-    | ChangeText String
+    = ChangeText String
     | KeyPress Int
 
 -- UPDATE
@@ -49,12 +47,6 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
-        Msg1 ->
-            (model, Cmd.none)
-
-        Msg2 ->
-            (model, Cmd.none)
-
         ChangeText newText ->
             ({model | inputText = newText}, Cmd.none)
 
