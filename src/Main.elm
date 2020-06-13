@@ -3,6 +3,9 @@ module Main exposing (..)
 import Browser
 import Html exposing(..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onInput)
+import Json.Decode as Json
+
 
 type alias Flags = Int
 
@@ -15,20 +18,33 @@ main =
         , subscriptions = subscriptions
     }
 
-
-type alias Model =
-    { inputTodo : String
+type alias Todo =
+    { content : String
+    , status : TodoStatus
     }
 
+type TodoStatus
+    = Done
+    | None
+
+type alias Model =
+    { inputText : String
+    , todos: List Todo
+    }
+
+-- INIT
 
 init : Flags -> (Model, Cmd Msg)
 init _ =
-    (Model "key", Cmd.none)
+    (Model "" [], Cmd.none)
 
 type Msg
     = Msg1
     | Msg2
+    | ChangeText String
+    | KeyPress Int
 
+-- UPDATE
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -39,21 +55,41 @@ update msg model =
         Msg2 ->
             (model, Cmd.none)
 
+        ChangeText newText ->
+            ({model | inputText = newText}, Cmd.none)
+
+        KeyPress keyCode ->
+            case keyCode of
+                13 ->
+                    ({model | inputText = "", todos = {content = model.inputText, status = None} :: model.todos }, Cmd.none)
+                _ ->
+                    (model, Cmd.none)
+
+
+-- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions _ =
     Sub.none
 
+
+
+-- VIEW
+
+onKeyPress : (Int -> Msg) -> Attribute Msg
+onKeyPress tagger =
+    Html.Events.on "keypress" (Json.map tagger Html.Events.keyCode)
 
 view : Model -> Browser.Document Msg
 view model =
     { title = "Elm • TodoMVC"
     , body =
     [ section [ class "todoapp" ]
-        [ header [ class "header" ]
+        [ div [class "debug" ] [ text (model.inputText ++ String.fromInt (List.length model.todos)) ]
+          , header [ class "header" ]
             [ h1 []
                 [ text "todos" ]
-            , input [ attribute "autofocus" "", class "new-todo", placeholder "What needs to be done?" ]
+            , input [ attribute "autofocus" "", class "new-todo", placeholder "What needs to be done?", value model.inputText, onInput ChangeText, onKeyPress KeyPress ]
                 []
             ]
         , section [ class "main" ]
