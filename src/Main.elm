@@ -29,9 +29,8 @@ type alias Todo =
     }
 
 
-type TodoStatus
-    = Done
-    | None
+type alias TodoStatus =
+    Bool
 
 
 type alias Model =
@@ -54,6 +53,7 @@ type Msg
     = ChangeText String
     | KeyPress Int
     | Delete Int
+    | CheckTodo Int
 
 
 
@@ -69,13 +69,29 @@ update msg model =
         KeyPress keyCode ->
             case keyCode of
                 13 ->
-                    ( { model | inputText = "", todos = { content = model.inputText, status = None, id = model.uid + 1 } :: model.todos, uid = model.uid + 1 }, Cmd.none )
+                    ( { model | inputText = "", todos = { content = model.inputText, status = False, id = model.uid + 1 } :: model.todos, uid = model.uid + 1 }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
 
         Delete id ->
             ( { model | todos = List.filter (\todo -> todo.id /= id) model.todos }, Cmd.none )
+
+        CheckTodo id ->
+            ( { model
+                | todos =
+                    List.map
+                        (\todo ->
+                            if todo.id == id then
+                                { todo | status = not todo.status }
+
+                            else
+                                todo
+                        )
+                        model.todos
+              }
+            , Cmd.none
+            )
 
 
 
@@ -101,7 +117,7 @@ viewEntry todo =
     ( String.fromInt todo.id
     , li []
         [ div [ class "view" ]
-            [ input [ attribute "checked" "", class "toggle", type_ "checkbox" ]
+            [ input [ checked todo.status, class "toggle", type_ "checkbox", onClick (CheckTodo todo.id) ]
                 []
             , label []
                 [ text todo.content ]
