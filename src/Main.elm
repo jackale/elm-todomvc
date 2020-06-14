@@ -281,10 +281,10 @@ view model =
             , footer [ class "footer" ]
                 [ span [ class "todo-count" ]
                     [ strong []
-                        [ text (String.fromInt (List.length model.todos)) ]
+                        [ text (String.fromInt (List.length (List.filter (\todo -> todo.status == False) model.todos))) ]
                     , text
                         (" item"
-                            ++ (if List.length model.todos == 1 then
+                            ++ (if List.length (List.filter (\todo -> todo.status == False) model.todos) == 1 then
                                     ""
 
                                 else
