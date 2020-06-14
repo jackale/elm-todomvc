@@ -38,7 +38,14 @@ type alias Model =
     { inputText : String
     , todos : List Todo
     , uid : Int
+    , displayMode : DisplayMode
     }
+
+
+type DisplayMode
+    = All
+    | Active
+    | Completed
 
 
 
@@ -47,7 +54,7 @@ type alias Model =
 
 init : Flags -> ( Model, Cmd Msg )
 init _ =
-    ( Model "" [] 1, Cmd.none )
+    ( Model "" [] 1 All, Cmd.none )
 
 
 type Msg
@@ -60,6 +67,7 @@ type Msg
     | ToggleAll
     | SaveContent Int Int
     | UpdateContent Int String
+    | ChangeDisplayMode DisplayMode
 
 
 
@@ -167,6 +175,9 @@ update msg model =
             , Cmd.none
             )
 
+        ChangeDisplayMode displayMode ->
+            ( { model | displayMode = displayMode }, Cmd.none )
+
 
 
 -- SUBSCRIPTIONS
@@ -186,17 +197,25 @@ onKeyPress tagger =
     Html.Events.on "keypress" (Json.map tagger Html.Events.keyCode)
 
 
-viewEntry : Todo -> ( String, Html Msg )
-viewEntry todo =
+isHidden : Todo -> DisplayMode -> Bool
+isHidden todo displayMode =
+    case displayMode of
+        All ->
+            False
+
+        Active ->
+            todo.status == True
+
+        Completed ->
+            todo.status == False
+
+
+viewEntry : Todo -> DisplayMode -> ( String, Html Msg )
+viewEntry todo displayMode =
     ( String.fromInt todo.id
     , li
-        [ class
-            (if todo.isEditing == True then
-                "editing"
-
-             else
-                ""
-            )
+        [ classList [ ( "editing", todo.isEditing ) ]
+        , hidden (isHidden todo displayMode)
         ]
         [ div [ class "view", onDoubleClick (Edit todo.id) ]
             [ input [ checked todo.status, class "toggle", type_ "checkbox", onClick (CheckTodo todo.id) ]
@@ -232,7 +251,7 @@ view model =
                     [ text "Mark all as complete" ]
                 , Keyed.node "ul"
                     [ class "todo-list" ]
-                    (List.map viewEntry model.todos)
+                    (List.map (\todo -> viewEntry todo model.displayMode) model.todos)
 
                 --      li [ class "completed" ]
                 --     [ div [ class "view" ]
@@ -276,15 +295,15 @@ view model =
                     ]
                 , ul [ class "filters" ]
                     [ li []
-                        [ a [ class "selected", href "#/" ]
+                        [ a [ classList [ ( "selected", model.displayMode == All ) ], href "#/", onClick (ChangeDisplayMode All) ]
                             [ text "All" ]
                         ]
                     , li []
-                        [ a [ href "#/active" ]
+                        [ a [ classList [ ( "selected", model.displayMode == Active ) ], href "#/active", onClick (ChangeDisplayMode Active) ]
                             [ text "Active" ]
                         ]
                     , li []
-                        [ a [ href "#/completed" ]
+                        [ a [ classList [ ( "selected", model.displayMode == Completed ) ], href "#/completed", onClick (ChangeDisplayMode Completed) ]
                             [ text "Completed" ]
                         ]
                     ]
