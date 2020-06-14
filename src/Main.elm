@@ -54,6 +54,7 @@ type Msg
     | KeyPress Int
     | Delete Int
     | CheckTodo Int
+    | ClearCompleted
 
 
 
@@ -92,6 +93,9 @@ update msg model =
               }
             , Cmd.none
             )
+
+        ClearCompleted ->
+            ( { model | todos = List.filter (\todo -> todo.status == False) model.todos }, Cmd.none )
 
 
 
@@ -179,8 +183,17 @@ view model =
             , footer [ class "footer" ]
                 [ span [ class "todo-count" ]
                     [ strong []
-                        [ text "0" ]
-                    , text "item left"
+                        [ text (String.fromInt (List.length model.todos)) ]
+                    , text
+                        (" item"
+                            ++ (if List.length model.todos == 1 then
+                                    ""
+
+                                else
+                                    "s"
+                               )
+                            ++ " left"
+                        )
                     ]
                 , ul [ class "filters" ]
                     [ li []
@@ -196,7 +209,7 @@ view model =
                             [ text "Completed" ]
                         ]
                     ]
-                , button [ class "clear-completed" ]
+                , button [ class "clear-completed", onClick ClearCompleted ]
                     [ text "Clear completed" ]
                 ]
             ]
