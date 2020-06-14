@@ -58,6 +58,8 @@ type Msg
     | ClearCompleted
     | Edit Int
     | ToggleAll
+    | SaveContent Int Int
+    | UpdateContent Int String
 
 
 
@@ -128,6 +130,43 @@ update msg model =
             , Cmd.none
             )
 
+        SaveContent id keyCode ->
+            case keyCode of
+                13 ->
+                    ( { model
+                        | todos =
+                            List.map
+                                (\todo ->
+                                    if todo.id == id then
+                                        { todo | isEditing = False }
+
+                                    else
+                                        todo
+                                )
+                                model.todos
+                      }
+                    , Cmd.none
+                    )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        UpdateContent id newContent ->
+            ( { model
+                | todos =
+                    List.map
+                        (\todo ->
+                            if todo.id == id then
+                                { todo | content = newContent }
+
+                            else
+                                todo
+                        )
+                        model.todos
+              }
+            , Cmd.none
+            )
+
 
 
 -- SUBSCRIPTIONS
@@ -167,7 +206,8 @@ viewEntry todo =
             , button [ class "destroy", onClick (Delete todo.id) ]
                 []
             ]
-        , input [ class "edit", value "Create a TodoMVC template" ]
+        , input [ class "edit", value todo.content, onInput (UpdateContent todo.id), onKeyPress (SaveContent todo.id) ]
+            -- TODO onBlur
             []
         ]
     )
@@ -186,7 +226,7 @@ view model =
                     []
                 ]
             , section [ class "main" ]
-                [ input [ class "toggle-all", id "toggle-all", type_ "checkbox", onClick ToggleAll, checked (List.all (\todo -> todo.status == True) model.todos) ]
+                [ input [ class "toggle-all", id "toggle-all", type_ "checkbox", onClick ToggleAll, checked (List.all (\todo -> todo.status == True) model.todos && List.length model.todos /= 0) ]
                     []
                 , label [ for "toggle-all" ]
                     [ text "Mark all as complete" ]
@@ -248,8 +288,8 @@ view model =
                             [ text "Completed" ]
                         ]
                     ]
-                , button [ class "clear-completed", onClick ClearCompleted ]
-                    [ text "Clear completed" ]
+                , button [ class "clear-completed", onClick ClearCompleted, hidden (List.all (\todo -> todo.status == False) model.todos) ]
+                    [ text ("Clear completed (" ++ String.fromInt (List.length (List.filter (\todo -> todo.status == True) model.todos)) ++ ")") ]
                 ]
             ]
         ]
