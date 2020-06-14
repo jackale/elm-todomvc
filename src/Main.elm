@@ -26,6 +26,7 @@ type alias Todo =
     { content : String
     , status : TodoStatus
     , id : Int
+    , isEditing : Bool
     }
 
 
@@ -55,6 +56,8 @@ type Msg
     | Delete Int
     | CheckTodo Int
     | ClearCompleted
+    | Edit Int
+    | ToggleAll
 
 
 
@@ -70,7 +73,7 @@ update msg model =
         KeyPress keyCode ->
             case keyCode of
                 13 ->
-                    ( { model | inputText = "", todos = { content = model.inputText, status = False, id = model.uid + 1 } :: model.todos, uid = model.uid + 1 }, Cmd.none )
+                    ( { model | inputText = "", todos = { content = model.inputText, status = False, id = model.uid + 1, isEditing = False } :: model.todos, uid = model.uid + 1 }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -97,6 +100,34 @@ update msg model =
         ClearCompleted ->
             ( { model | todos = List.filter (\todo -> todo.status == False) model.todos }, Cmd.none )
 
+        Edit id ->
+            ( { model
+                | todos =
+                    List.map
+                        (\todo ->
+                            if todo.id == id then
+                                { todo | isEditing = True }
+
+                            else
+                                { todo | isEditing = False }
+                        )
+                        model.todos
+              }
+            , Cmd.none
+            )
+
+        ToggleAll ->
+            ( { model
+                | todos =
+                    if List.all (\todo -> todo.status == True) model.todos then
+                        List.map (\todo -> { todo | status = False }) model.todos
+
+                    else
+                        List.map (\todo -> { todo | status = True }) model.todos
+              }
+            , Cmd.none
+            )
+
 
 
 -- SUBSCRIPTIONS
@@ -119,8 +150,16 @@ onKeyPress tagger =
 viewEntry : Todo -> ( String, Html Msg )
 viewEntry todo =
     ( String.fromInt todo.id
-    , li []
-        [ div [ class "view" ]
+    , li
+        [ class
+            (if todo.isEditing == True then
+                "editing"
+
+             else
+                ""
+            )
+        ]
+        [ div [ class "view", onDoubleClick (Edit todo.id) ]
             [ input [ checked todo.status, class "toggle", type_ "checkbox", onClick (CheckTodo todo.id) ]
                 []
             , label []
@@ -147,7 +186,7 @@ view model =
                     []
                 ]
             , section [ class "main" ]
-                [ input [ class "toggle-all", id "toggle-all", type_ "checkbox" ]
+                [ input [ class "toggle-all", id "toggle-all", type_ "checkbox", onClick ToggleAll, checked (List.all (\todo -> todo.status == True) model.todos) ]
                     []
                 , label [ for "toggle-all" ]
                     [ text "Mark all as complete" ]
